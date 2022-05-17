@@ -1,6 +1,7 @@
 #import greedy
 import numpy as np
 
+
 comunasColindantes = {
     1: [2, 3, 4],
     2: [1, 4],
@@ -15,10 +16,31 @@ comunasColindantes = {
     11: [7, 9, 10]
 }
 
-
-
 #arreglo que contiene el costo de construir en cada  columna
 costoComuna = [60, 30, 60, 70, 130, 50, 70, 60, 50, 80, 40]
+
+
+
+#verifica si la solucion es valida
+def isSol(sol):
+    if sum(sol) == 11:
+        return True
+    else:
+        return False
+
+
+
+
+# Generador de soluciones aleatorias
+# (NO ÓPTIMAS)
+def solGen(n):
+    sol_arr = []
+    while(len(sol_arr) < n ):
+        sol_arr.append(np.random.binomial(1, 0.5, 11))
+        # if isSol(nSol):
+        #     sol_arr.append(nSol)
+    return sol_arr
+
 
 
 
@@ -39,30 +61,44 @@ def generadorMatrizAdyacencia ():
 
 
 
-def atractividad():
-
-    #arreglo que contiene la atractividad de cada comuna de construir
-    atractividad = [1.0 / w for w in costoComuna] 
-    pesos = sum(atractividad)
-    atractividad = [w / pesos for w in atractividad]
-
+def atractividad(comuna):
+    atractividad = comunasColindantes[comuna]/costoComuna[comuna-1]
     return atractividad
 
 
 
+def mejorVecindario(comunas):
+    mejorVecindario = 0
+    for i in comunas:
+        if(atractividad(i) > atractividad(mejorVecindario)):
+            mejorVecindario = i
+    return mejorVecindario
 
-# def hill_climbing (solActual):
-#     solActual = greedy.greedy( greedy.generadorMatrizAdyacencia() )
-#     pesototal = sum(solActual)
+
+
+
+def hill_climbing (solActual):
+
+    costoTotal = sum(solActual)
     
-#     while(True):
-#         solNueva = greedy.greedy( greedy.generadorMatrizAdyacencia() )
-#         pesonuevo = sum(solNueva)
-#         if pesonuevo < pesototal:
-#             solActual = solNueva
-#             pesototal = pesonuevo
-#         else:
-#             break
+    while(not isSol(solActual)):
+        vecindario = comunasColindantes(solActual)
+
+        for i in vecindario:
+            solNueva = solActual.copy()
+            solNueva[i] = 0
+            costoNuevo = sum(solNueva)
+            
+            if(costoNuevo < costoTotal):
+                solActual = solNueva
+                costoTotal = costoNuevo
+                break
+
+    return solActual
 
 
-print (generadorMatrizAdyacencia())
+
+
+solActual = solGen(1)[0]
+print(solActual)
+print (hill_climbing(solActual))
