@@ -73,8 +73,7 @@ vecindario de la solución actual según una comuna otorgada
 def mejorVecindario(comuna, solActual):
     mejorVecindario = comuna
     for i in range(11):
-        if(atractividad( MatAdy[comuna][i] ) > atractividad(mejorVecindario)
-            and solActual[i] == 0):
+        if(atractividad( MatAdy[comuna][i] ) > atractividad(mejorVecindario) and solActual[i] == 0):
             mejorVecindario = i
     return mejorVecindario
 
@@ -83,21 +82,23 @@ def mejorVecindario(comuna, solActual):
 def hill_climbing (solActual):
 
     solNueva = solActual.copy()
-
+    peso = greedy.totalCost(solActual)
+    nuevoPeso = peso
     for i in range(11):
         if(solActual[i] == 1):
             nuevoVacunatorio = mejorVecindario(i, solActual)
             solNueva[i] = 0
             solNueva[nuevoVacunatorio] = 1
-            solActual = solNueva.copy()
-
-    return solNueva
+            nuevoPeso = greedy.totalCost(solNueva)
+    if (isSol(solNueva) and nuevoPeso <= peso):
+        return solNueva
+    return solActual
 
 
 
 def __main__():
     print("----------------------------------------------------------------------")
-    solInicial = greedy.stochGreedy(L=10, seed=np.random.randint(100000000))
+    solInicial = greedy.stochGreedy(L=1, seed=np.random.randint(100000000))
     print("Solución inicial con Greedy: " +  str(solInicial) + ", costo: " + str(greedy.totalCost(solInicial)))
     solFinal = hill_climbing(solInicial)
     print("Solución con Hill-Climbing: " + str(solFinal) + ", costo: " + str(greedy.totalCost(solFinal)))
