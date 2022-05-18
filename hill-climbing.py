@@ -1,104 +1,108 @@
 #import greedy
 import numpy as np
+import greedy
 
-
-comunasColindantes = {
-    1: [2, 3, 4],
-    2: [1, 4],
-    3: [1, 4, 5, 6],
-    4: [3, 5],
-    5: [3, 4, 6, 7, 8, 9],
-    6: [3, 5, 9],
-    7: [5, 8, 10, 11],
-    8: [5, 7, 9, 10],
-    9: [5, 6, 8, 10, 11],
-    10: [7, 8, 9, 11],
-    11: [7, 9, 10]
-}
-
-#arreglo que contiene el costo de construir en cada  columna
-costoComuna = [60, 30, 60, 70, 130, 50, 70, 60, 50, 80, 40]
+MatAdy = [
+    [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], 
+    [1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], 
+    [1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0], 
+    [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], 
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0], 
+    [0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0], 
+    [0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1], 
+    [0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0], 
+    [0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1], 
+    [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1], 
+    [0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1]
+]
 
 
 
-#verifica si la solucion es valida
-def isSol(sol):
-    if sum(sol) == 11:
-        return True
-    else:
-        return False
-
-
-
-
-# Generador de soluciones aleatorias
-# (NO ÓPTIMAS)
+""" Generador de soluciones aleatorias
+    (NO ÓPTIMAS). Genera un arreglo de
+    n soluciones factibles, por prueba
+    y error, de forma aleatoria. """
 def solGen(n):
     sol_arr = []
     while(len(sol_arr) < n ):
-        sol_arr.append(np.random.binomial(1, 0.5, 11))
-        # if isSol(nSol):
-        #     sol_arr.append(nSol)
+        nSol = np.random.binomial(1, 0.5, 11)
+        if isSol(nSol):
+            sol_arr.append(nSol)
     return sol_arr
 
 
 
-
-def generadorMatrizAdyacencia ():
-
-    #matriz que poseerá la información de las comunas xj colindantes con i
-    matrizAdyacencia = np.zeros((11, 11))
-
-    #for que llena la matriz de adyacencia
-    for comuna in comunasColindantes:
-        for colindante in comunasColindantes[comuna]:
-            matrizAdyacencia[comuna - 1][colindante - 1] = 1
-
+""" Comprueba si una solución es 
+    o no factible de a cuerdo a la
+    matriz de adyacencia. Una 
+    solución es factible si y sólo si
+    para cada comuna hay acceso a 
+    al menos 1 vacunatorio, ya sea 
+    en la misma comuna o en las
+    adyacentes. """
+def isSol(X):
+    sol = True
     for i in range(11):
-        matrizAdyacencia[i-1][i-1] = 1
+        sum = 0
+        for j in range(11):
+            sum += X[j]*MatAdy[i][j]
+        if(sum < 1):
+            sol = False
+            break
+    return sol
 
-    return matrizAdyacencia
 
-
-
+"""
+Función de atractividad, que calcula la atractividad de una construccion
+basado en  la cantidad de comunas que se
+cubren dividido por el costo de construccion de la comuna.
+"""
 def atractividad(comuna):
-    atractividad = comunasColindantes[comuna]/costoComuna[comuna-1]
+    atractividad = 0
+    for i in range(11):
+        atractividad += MatAdy[comuna][i]
+    atractividad = atractividad / greedy.costos[comuna]
     return atractividad
 
 
 
-def mejorVecindario(comunas):
-    mejorVecindario = 0
-    for i in comunas:
-        if(atractividad(i) > atractividad(mejorVecindario)):
+""""
+Compara la atractividad de construir  en cada comuna del 
+vecindario de la solución actual según una comuna otorgada
+"""
+def mejorVecindario(comuna, solActual):
+    mejorVecindario = comuna
+    for i in range(11):
+        if(atractividad( MatAdy[comuna][i] ) > atractividad(mejorVecindario)
+            and solActual[i] == 0):
             mejorVecindario = i
     return mejorVecindario
 
 
 
-
 def hill_climbing (solActual):
 
-    costoTotal = sum(solActual)
-    
-    while(not isSol(solActual)):
-        vecindario = comunasColindantes(solActual)
+    solNueva = solActual.copy()
 
-        for i in vecindario:
-            solNueva = solActual.copy()
+    for i in range(11):
+        if(solActual[i] == 1):
+            nuevoVacunatorio = mejorVecindario(i, solActual)
             solNueva[i] = 0
-            costoNuevo = sum(solNueva)
-            
-            if(costoNuevo < costoTotal):
-                solActual = solNueva
-                costoTotal = costoNuevo
-                break
+            solNueva[nuevoVacunatorio] = 1
+            solActual = solNueva.copy()
 
-    return solActual
+    return solNueva
 
 
 
+def __main__():
+    print("----------------------------------------------------------------------")
+    solInicial = greedy.stochGreedy(L=10, seed=np.random.randint(100000000))
+    print("Solución inicial con Greedy: " +  str(solInicial) + ", costo: " + str(greedy.totalCost(solInicial)))
+    solFinal = hill_climbing(solInicial)
+    print("Solución con Hill-Climbing: " + str(solFinal) + ", costo: " + str(greedy.totalCost(solFinal)))
+    print("----------------------------------------------------------------------")
 
-solActual = solGen(1)[0]
-print(solActual)
-print (hill_climbing(solActual))
+
+if __name__ == "__main__":
+    __main__()
